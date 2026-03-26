@@ -12,6 +12,7 @@ import asyncio
 import logging
 import re
 import os
+from aiohttp import web
 from datetime import datetime
 from typing import Dict
 
@@ -77,6 +78,21 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════
 #  🛠️  УТИЛІТИ
 # ═══════════════════════════════════════════════════════════════
+
+async def health_check(request):
+    return web.Response(text="OK")
+
+async def run_http_server():
+    app = web.Application()
+    app.router.add_get('/ping', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"🌐 HTTP-сервер запущено на порту {port}")
+    # сервер працює вічно, поки не зупинять
+    await asyncio.Event().wait()
 
 def progress_bar(step: int, total: int = 5) -> str:
     """Прогрес-бар: ████░░ 4/5"""
@@ -985,7 +1001,7 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 #  🚦  MAIN — ЗБІРКА БОТА
 # ═══════════════════════════════════════════════════════════════
 
-def main() -> None:
+async def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     # ── ConversationHandler ────────────────────────────────────
@@ -1057,8 +1073,11 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(cb_admin_refresh, pattern="^admin_refresh$"))
 
     logger.info("🤖  Бот запущено. Натисніть Ctrl+C для зупинки.")
-    app.run_polling(drop_pending_updates=True)
+    await asyncio.gather(
+        app.run_polling(drop_pending_updates=True),
+        run_http_server()
+    )
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
