@@ -1003,8 +1003,10 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 #  🚦  MAIN — ЗБІРКА БОТА
 # ═══════════════════════════════════════════════════════════════
 
-async def main():
+def main():
     app = Application.builder().token(BOT_TOKEN).build()
+    http_thread = threading.Thread(target=run_http_server_sync, daemon=True)
+    http_thread.start()
 
     # ── ConversationHandler ────────────────────────────────────
     conv = ConversationHandler(
@@ -1079,4 +1081,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
