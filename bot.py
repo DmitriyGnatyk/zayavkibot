@@ -12,6 +12,7 @@ import asyncio
 import logging
 import re
 import os
+import threading
 from aiohttp import web
 from datetime import datetime
 from typing import Dict
@@ -78,21 +79,22 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════
 #  🛠️  УТИЛІТИ
 # ═══════════════════════════════════════════════════════════════
+def run_http_server_sync():
+    """Запускає HTTP-сервер в окремому потоці."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-async def health_check(request):
-    return web.Response(text="OK")
-
-async def run_http_server():
     app = web.Application()
-    app.router.add_get('/ping', health_check)
+    app.router.add_get('/ping', lambda request: web.Response(text="OK"))
+
     runner = web.AppRunner(app)
-    await runner.setup()
+    loop.run_until_complete(runner.setup())
     port = int(os.environ.get("PORT", 8000))
     site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"🌐 HTTP-сервер запущено на порту {port}")
-    # сервер працює вічно, поки не зупинять
-    await asyncio.Event().wait()
+    loop.run_until_complete(site.start())
+
+    print(f"🌐 HTTP-сервер запущено на порту {port} (у окремому потоці)")
+    loop.run_forever()
 
 def progress_bar(step: int, total: int = 5) -> str:
     """Прогрес-бар: ████░░ 4/5"""
@@ -1073,10 +1075,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(cb_admin_refresh, pattern="^admin_refresh$"))
 
     logger.info("🤖  Бот запущено. Натисніть Ctrl+C для зупинки.")
-    await asyncio.gather(
-        app.run_polling(drop_pending_updates=True),
-        run_http_server()
-    )
+    app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":
