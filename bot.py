@@ -11,6 +11,7 @@
 import asyncio
 import logging
 import re
+import os
 from datetime import datetime
 from typing import Dict
 
@@ -35,16 +36,13 @@ from telegram.constants import ParseMode
 
 # ═══════════════════════════════════════════════════════════════
 #  ⚙️  НАЛАШТУВАННЯ — Змініть ці значення
-# ═══════════════════════════════════════════════════════════════
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+GROUP_CHAT_ID = int(os.getenv("GROUP_CHAT_ID"))
+GROUP_NAME = os.getenv("GROUP_NAME")  # значение по умолчанию
 
-BOT_TOKEN = "8621682756:AAFJOlAcb1CP6jZAiXnFMRg2A0inAUIoy-0"           # 🔑 Токен від @BotFather
-GROUP_CHAT_ID = -1002243524443              # 📌 ID вашої групи (від'ємне число)
-GROUP_NAME = "💥Дорожній Прогноз💥"              # 📛 Назва групи
-
-# 👑 Список адмінів — додайте скільки завгодно Telegram user ID
-ADMIN_IDS: list[int] = [
-    7663969292,
-]
+# ADMIN_IDS — храним в переменной как строку через запятую, потом преобразуем
+admin_ids_str = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()]
 
 # ═══════════════════════════════════════════════════════════════
 #  📊  СТАНИ РОЗМОВИ
